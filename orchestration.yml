@@ -1,0 +1,98 @@
+---
+- name: install and configure couch cluster
+  hosts: servers
+  remote_user: ubuntu
+  become: yes
+  vars:
+   ansible_ssh_private_key_file: /root/jamirineni.pem
+   host_key_checking: False
+   command_warnings: False
+  tasks:
+    - name: install git 
+      apt: name=git state=present
+    - name: install python 3
+      apt: name=python3 state=present
+    - name: install pip3
+      apt: name=python3-pip state=present
+    - name: clone docker repo into root folder
+      git: 
+        repo: https://github.com/redgeoff/docker-ce-vagrant
+        clone: yes
+        dest: /root/docker-ce-vagrant
+    - name: update apt cache
+      apt: 
+        update_cache: yes
+    - name: update packages
+      apt: 
+        upgrade: dist
+    - name: change into repository directory and install docker
+      shell: "/root/docker-ce-vagrant/docker.sh"
+    - name: make directory to save data
+      file: path=/home/ubuntu/common state=directory
+    - name: install docker-py
+      pip: name=docker-py state=present executable=pip3
+    - name: run couchdb docker
+      docker_container:
+        name: couchdb
+        image: redgeoff/couchdb
+        state: started
+        restart_policy: always
+        log_options:
+          max-size: 100m
+        published_ports: "[{% for port in range(9100, 9201) %}'{{port}}:{{port}}'{% if not loop.last %},{% endif %}{% endfor %},'4369:4369','5984:5984','5986:5986']"
+        volumes:
+          - /home/ubuntu/common:/home/couchdb/common 
+        env:
+            COUCHDB_DATA_DIR: "/home/couchdb/common/data"
+            COUCHDB_USER: "admin"
+            COUCHDB_HASHED_PASSWORD: "-pbkdf2-b1eb7a68b0778a529c68d30749954e9e430417fb,4da0f8f1d98ce649a9c5a3845241ae24,10"
+            COUCHDB_COOKIE: "mycookie"
+            COUCHDB_NODE_NAME: "{{ inventory_hostname }}"
+    - name: add node source
+      shell: "curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -"
+    - name: install npm
+      apt: name={{ item }} update_cache=yes state=latest
+      with_items:
+        - build-essential
+        - nodejs
+    - name: install npm in global mode
+      npm:
+        name:  npm
+        global: yes
+    - name: install add-cors-to-couchdb module
+      npm: 
+        name: add-cors-to-couchdb
+        global: yes
+    - name: add cors to couchdb
+      shell: "add-cors-to-couchdb http://localhost:5984 -u admin -p admin"
+    - name: clone cluster repo
+      git:
+        repo: https://github.com/redgeoff/redgeoff-couchdb-docker
+        clone: yes
+        dest: /root/redgeoff-couchdb-docker
+    - name: add nodes to cluster
+      shell: /root/redgeoff-couchdb-docker/create-cluster.sh admin admin 5984 5986 "{{ item }} {{ inventory_hostname }}"
+      with_items: "{{ groups['servers'] }}"
+      when: inventory_hostname == groups['servers'][0] and inventory_hostname != item
+    - name: install required python packages for running harvester
+      pip: 
+        name: "{{ item }}"
+        state: present
+        executable: pip3
+      with_items:
+        - twython
+        - couchdb
+        - numpy
+        - vaderSentiment
+    - name: make directoy for harvester files
+      file: path=/root/harvester state=directory
+    - name: copy harvester files to remote servers
+      copy:
+        src: ./harvester/{{ item }}
+        dest: /root/harvester/{{ item }}
+        mode: 0644
+      with_items:
+        - tweet_harvester.py
+        - twitter.creds
+    - name: run the tweet harvester
+      shell: "python3 /root/harvester/tweet_harvester.py --credFile /root/harvester/twitter.creds --minLat -43.6345972634 --maxLat -27.15139149345 --minLong 133.4542110535 --maxLong 153.569469029"
