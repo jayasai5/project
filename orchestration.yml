@@ -5,8 +5,9 @@
   become: yes
   vars:
    ansible_ssh_private_key_file: /root/jamirineni.pem
-   host_key_checking: False
+   ANSIBLE_HOST_KEY_CHECKING: False
    command_warnings: False
+   HOST_COUNT: "{{ groups['maingroup'] | length }}"
   tasks:
     - name: install git 
       apt: name=git state=present
@@ -93,6 +94,8 @@
         mode: 0644
       with_items:
         - tweet_harvester.py
-        - twitter.creds
+        - twitter{{ (ansible_play_hosts.index(inventory_hostname)+1) }}.creds
     - name: run the tweet harvester
-      shell: "python3 /root/harvester/tweet_harvester.py --credFile /root/harvester/twitter.creds --minLat -43.6345972634 --maxLat -27.15139149345 --minLong 133.4542110535 --maxLong 153.569469029"
+      shell: "python3 /root/harvester/tweet_harvester.py --credFile /root/harvester/twitter{{ (ansible_play_hosts.index(inventory_hostname)+1) }}.creds --minLat -37.857366 --maxLat -37.767133 --minLong 144.892953 --maxLong 145.010027"
+      async: 100000000000000000
+      poll: 0
