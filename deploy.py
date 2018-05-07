@@ -6,11 +6,13 @@ Created on Sun Apr 29 09:33:19 2018
 """
 
 import argparse
+import os
 from novaclient import client
 from keystoneauth1 import loading,session
 from cinderclient import client as cclient
 from neutronclient.v2_0 import client as nclient
-import ansible.runner
+from playbook_runner import runPlaybook
+import numpy as np
 import random
 #add options to the command line argument parser
 zones = ["QRIScloud","auckland","melbourne-np","melbourne-qh2","monash-03","NCI","tasmania-s","swinburne","intersect","sa","monash-02","tasmania","monash-01"]
@@ -23,19 +25,28 @@ parser.add_argument('-u','--username',help = 'institutional login username for a
 parser.add_argument('-z','--zone',help = 'the availabilty zone to deploy the machines in(Optional)',default = 'melbourne-qh2',choices = zones)
 parser.add_argument('-v','--storagevolume',help = 'the total amount of storage to use across all instances',default="250",type = int)
 args = parser.parse_args()
-
-
-#parse the innput arguments
+#parse the input arguments
 no_of_instances = args.instances
 apikey = args.apikey
 authurl = args.authurl
 projectid = args.projectid
 username = args.username
-keypair_name = "keypair"+random.randint(10000,20000)
+keypair_name = "keypair"+str(random.randint(10000,20000))
 zone = args.zone
 volume = args.storagevolume
 #get storage for each instance
 instance_storage = int(volume/no_of_instances)
+min_lat = -39.1152
+max_lat = -34.0113
+min_long = 140.9598
+max_long = 150.1004
+c = list(np.linspace(min_long,max_long,no_of_instances+1))
+coords = []
+for k,l in zip(c,c[1:]):
+    coord = ' minlat='+str(min_lat)+' maxlat='+str(max_lat)
+    coord+= ' minlong='+str(k)
+    coord+=' maxlong='+str(l)
+    coords.append(coord)
 
 #get the loader
 loader = loading.get_plugin_loader('password')
@@ -102,6 +113,7 @@ while(building):
         if server.name in server_names and server.status != "ACTIVE":
             building = True
             server_ids = []
+            server_ips = []
             break;
     
 
@@ -124,26 +136,27 @@ for i in range(no_of_instances):
 print("creating credentials for ansible")
 with open("privatekey.pem","w") as p:
     p.write(vars(keypair)['private_key'])
-with open("hosts.ini","w") as h:
-    lines = ["[servers]"]
-    for server in server_ips:
-        lines+=server
-    h.writelines(lines)
+os.chmod('privatekey.pem',0600)
+with open("hosts.ini","a") as h:
+    h.write("[servers]\n")
+    for server,coord in zip(server_ips,coords):
+        h.write(server+coord+"\n")
 all_creds = []
 with open("twitter.creds","r") as c:
     i = 1
     creds = []
-    for line in c.readlines():
-        creds+=line
+    lines = c.readlines()
+    for line in lines:
+        creds.append(line.strip())
         if i%4 == 0:
-            all_creds+=creds
+            all_creds.append(creds)
             creds = []
         i+=1
-i = 1
-for cred in all_creds:
-    with open("twitter"+i+".creds","w") as c:
-        c.writelines(cred)
-    i+=1
+for i in range(0,len(all_creds)):
+    j = i%no_of_instances
+    with open("twitter"+str(j+1)+".creds","a") as c:
+        for cred in all_creds[i]:
+            c.write(cred+"\n")
 print("running the playbook")
-
+runPlaybook()
 print("done")
