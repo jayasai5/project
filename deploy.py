@@ -10,6 +10,8 @@ from novaclient import client
 from keystoneauth1 import loading,session
 from cinderclient import client as cclient
 from neutronclient.v2_0 import client as nclient
+import ansible.runner
+import random
 #add options to the command line argument parser
 zones = ["QRIScloud","auckland","melbourne-np","melbourne-qh2","monash-03","NCI","tasmania-s","swinburne","intersect","sa","monash-02","tasmania","monash-01"]
 parser = argparse.ArgumentParser(description = "Deploy the application on necter which can scale to the given number of instances.")
@@ -18,7 +20,6 @@ parser.add_argument('-k','--apikey',help = 'openstack api key for connecting to 
 parser.add_argument('-a','--authurl',help = 'use this option to specify an authentication url(Optional)',default = "https://keystone.rc.nectar.org.au:5000/v2.0/")
 parser.add_argument('-i','--projectid',help = 'specify the project id for authentication(Optional)',default = '1e8ec98ca2154094bdf58166999fc789')
 parser.add_argument('-u','--username',help = 'institutional login username for authentication')
-parser.add_argument('-e','--keypairname',help = 'specify the name of the keypair for access to instances(Optional)',default = 'my_key_pair')
 parser.add_argument('-z','--zone',help = 'the availabilty zone to deploy the machines in(Optional)',default = 'melbourne-qh2',choices = zones)
 parser.add_argument('-v','--storagevolume',help = 'the total amount of storage to use across all instances',default="250",type = int)
 args = parser.parse_args()
@@ -30,7 +31,7 @@ apikey = args.apikey
 authurl = args.authurl
 projectid = args.projectid
 username = args.username
-keypair_name = args.keypairname
+keypair_name = "keypair"+random.randint(10000,20000)
 zone = args.zone
 volume = args.storagevolume
 #get storage for each instance
@@ -51,9 +52,10 @@ print("Creating Security Groups")
 neutron = nclient.Client(session = sess)
 group = neutron.create_security_group({'security_group':{'tenant_id':projectid,'name':'couchdb','description':'security group from couchdb setup'}})
 group_id = group["security_group"]["id"]
-neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'1','port_range_max':'9999','remote_ip_prefix':'0.0.0.0/0'}})
-neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'egress','ethertype':'IPv4','protocol':'TCP','port_range_min':'1','port_range_max':'9999','remote_ip_prefix':'0.0.0.0/0'}})
+neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'9100','port_range_max':'9200','remote_ip_prefix':'0.0.0.0/0'}})
+neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'egress','ethertype':'IPv4','protocol':'TCP','port_range_min':'9100','port_range_max':'9200','remote_ip_prefix':'0.0.0.0/0'}})
 neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'5984','port_range_max':'5984','remote_ip_prefix':'0.0.0.0/0'}})
+neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'5986','port_range_max':'5986','remote_ip_prefix':'0.0.0.0/0'}})
 group = neutron.create_security_group({'security_group':{'tenant_id':projectid,'name':'ssh','description':'security group from ssh '}})
 group_id = group["security_group"]["id"]
 neutron.create_security_group_rule({'security_group':'ssh','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'22','port_range_max':'22','remote_ip_prefix':'0.0.0.0/0'}})
@@ -68,11 +70,7 @@ cinder = cclient.Client("3",session = sess)
 
 print("Creating keypair for deployment")
 #create a key_pair for access to servers
-try:
-    keypair = nova.keypairs.create(name = keypair_name)
-except:
-    print("keypair exists !! using existing keypair")
-    keypair = nova.keypairs.get(keypair_name)
+keypair = nova.keypairs.create(name = keypair_name)
 
 print("Creating instances and volumes")
 server_names = []
@@ -123,4 +121,29 @@ while(creating):
 print("attaching volumes")
 for i in range(no_of_instances):
     nova.volumes.create_server_volume(server_ids[i],volume_ids[i])
+print("creating credentials for ansible")
+with open("privatekey.pem","w") as p:
+    p.write(vars(keypair)['private_key'])
+with open("hosts.ini","w") as h:
+    lines = ["[servers]"]
+    for server in server_ips:
+        lines+=server
+    h.writelines(lines)
+all_creds = []
+with open("twitter.creds","r") as c:
+    i = 1
+    creds = []
+    for line in c.readlines():
+        creds+=line
+        if i%4 == 0:
+            all_creds+=creds
+            creds = []
+        i+=1
+i = 1
+for cred in all_creds:
+    with open("twitter"+i+".creds","w") as c:
+        c.writelines(cred)
+    i+=1
+print("running the playbook")
+
 print("done")
