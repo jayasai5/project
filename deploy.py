@@ -14,6 +14,9 @@ from neutronclient.v2_0 import client as nclient
 from playbook_runner import runPlaybook
 import numpy as np
 import random
+import paramiko
+from time import sleep
+
 #add options to the command line argument parser
 zones = ["QRIScloud","auckland","melbourne-np","melbourne-qh2","monash-03","NCI","tasmania-s","swinburne","intersect","sa","monash-02","tasmania","monash-01"]
 parser = argparse.ArgumentParser(description = "Deploy the application on necter which can scale to the given number of instances.")
@@ -137,6 +140,24 @@ print("creating credentials for ansible")
 with open("privatekey.pem","w") as p:
     p.write(vars(keypair)['private_key'])
 os.chmod('privatekey.pem',0600)
+print("checking ssh for ansible")
+def check_ssh(ip):
+    retries = 10
+    interval = 15
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    for x in range(retries):
+        print("retrying")
+        try:
+            ssh.connect(ip, username='ubuntu', key_filename='privatekey.pem')
+            return True
+        except Exception, e:
+            print e
+            sleep(interval)
+    return False
+for ip in server_ips:
+    check_ssh(ip)
 with open("hosts.ini","a") as h:
     h.write("[servers]\n")
     for server,coord in zip(server_ips,coords):
