@@ -39,17 +39,6 @@ zone = args.zone
 volume = args.storagevolume
 #get storage for each instance
 instance_storage = int(volume/no_of_instances)
-min_lat = -39.1152
-max_lat = -34.0113
-min_long = 140.9598
-max_long = 150.1004
-c = list(np.linspace(min_long,max_long,no_of_instances+1))
-coords = []
-for k,l in zip(c,c[1:]):
-    coord = ' minlat='+str(min_lat)+' maxlat='+str(max_lat)
-    coord+= ' minlong='+str(k)
-    coord+=' maxlong='+str(l)
-    coords.append(coord)
 
 #get the loader
 loader = loading.get_plugin_loader('password')
@@ -160,8 +149,8 @@ for ip in server_ips:
     check_ssh(ip)
 with open("hosts.ini","a") as h:
     h.write("[servers]\n")
-    for server,coord in zip(server_ips,coords):
-        h.write(server+coord+"\n")
+    for server in server_ips:
+        h.write(server+"\n")
 all_creds = []
 with open("twitter.creds","r") as c:
     i = 1
