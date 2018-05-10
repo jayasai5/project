@@ -1,0 +1,313 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<!DOCTYPE html><html lang="en"><head> <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+    
+<title>Happiness </title>  <!-- import plugin script -->   <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>   </head><body>
+
+<h1 style="font-family:courier; color:blue;"> Happiness Quotient across Australia! </h1>
+
+<h2 style="font-family:sans-serif;" >Adelaide</h2><canvas id="chart" width="600" height="400"></canvas>
+
+<script>
+   var barData = {
+   labels : [{% for item in labels %}
+                  "{{item}}",
+              {% endfor %}],
+
+   datasets : [
+      {
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+
+
+         data : [{{sentiments['adelaide']['positive']}}, {{sentiments['adelaide']['negative']}}, {{sentiments['adelaide']['neutral']}}],
+      }
+    ]
+
+
+   }   
+ 
+   // get bar chart canvas
+   var mychart = document.getElementById("chart").getContext("2d");
+ 
+   steps = 10
+   max = 100
+   // draw bar chart
+   new Chart(mychart).Bar(barData, {
+        scaleOverride: true,
+        scaleSteps: steps,
+        scaleStepWidth: Math.ceil(max / steps),
+        scaleStartValue: 0,
+        scaleShowVerticalLines: true,
+        scaleShowGridLines : true,
+        barShowStroke : true,
+        scaleShowLabels: true
+   });
+
+ 
+</script>
+
+<h2 style="font-family:sans-serif;">Sydney</h2><canvas id="chart2" width="600" height="400"></canvas>
+
+
+<script>
+   var barData = {
+   labels : [{% for item in labels %}
+                  "{{item}}",
+              {% endfor %}],
+
+   datasets : [
+      {
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+
+         data : [{{sentiments['sydney']['positive']}}, {{sentiments['sydney']['negative']}}, {{sentiments['sydney']['neutral']}}],
+      }
+      ]
+   }
+ 
+   // get bar chart canvas
+   var mychart = document.getElementById("chart2").getContext("2d");
+ 
+   steps = 10
+   max = 100
+   // draw bar chart
+   new Chart(mychart).Bar(barData, {
+        scaleOverride: true,
+        scaleSteps: steps,
+        scaleStepWidth: Math.ceil(max / steps),
+        scaleStartValue: 0,
+        scaleShowVerticalLines: true,
+        scaleShowGridLines : true,
+        barShowStroke : true,
+        scaleShowLabels: true
+   });
+
+ 
+</script>
+
+<h2 style="font-family:sans-serif;">Perth</h2><canvas id="chart3" width="600" height="400"></canvas>
+
+
+<script>
+   // bar chart data
+
+
+   var barData = {
+   labels : [{% for item in labels %}
+                  "{{item}}",
+              {% endfor %}],
+
+   datasets : [
+      {
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+
+         data : [{{sentiments['perth']['positive']}}, {{sentiments['perth']['negative']}}, {{sentiments['perth']['neutral']}}],
+      }
+      ]
+   }
+ 
+   // get bar chart canvas
+   var mychart = document.getElementById("chart3").getContext("2d");
+ 
+   steps = 10
+   max = 100
+   // draw bar chart
+   new Chart(mychart).Bar(barData, {
+        scaleOverride: true,
+        scaleSteps: steps,
+        scaleStepWidth: Math.ceil(max / steps),
+        scaleStartValue: 0,
+        scaleShowVerticalLines: true,
+        scaleShowGridLines : true,
+        barShowStroke : true,
+        scaleShowLabels: true
+   });
+
+ 
+</script>
+
+<h2 style="font-family:sans-serif;">Hobart</h2><canvas id="chart4" width="600" height="400"></canvas>
+
+
+<script>
+   // bar chart data
+
+
+   var barData = {
+   labels : [{% for item in labels %}
+                  "{{item}}",
+              {% endfor %}],
+
+   datasets : [
+      {
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+
+         data : [{{sentiments['hobart']['positive']}}, {{sentiments['hobart']['negative']}}, {{sentiments['hobart']['neutral']}}],
+      }
+      ]
+   }
+ 
+   // get bar chart canvas
+   var mychart = document.getElementById("chart4").getContext("2d");
+ 
+   steps = 10
+   max = 100
+   // draw bar chart
+   new Chart(mychart).Bar(barData, {
+        scaleOverride: true,
+        scaleSteps: steps,
+        scaleStepWidth: Math.ceil(max / steps),
+        scaleStartValue: 0,
+        scaleShowVerticalLines: true,
+        scaleShowGridLines : true,
+        barShowStroke : true,
+        scaleShowLabels: true
+   });
+
+ 
+</script>
+
+<h2 style="font-family:sans-serif;">Canberra</h2><canvas id="chart5" width="600" height="400"></canvas>
+
+
+<script>
+   // bar chart data
+
+
+   var barData = {
+   labels : [{% for item in labels %}
+                  "{{item}}",
+              {% endfor %}],
+
+   datasets : [
+      {
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+
+         data : [{{sentiments['canberra']['positive']}}, {{sentiments['canberra']['negative']}}, {{sentiments['canberra']['neutral']}}],
+      }
+      ]
+   }
+ 
+   // get bar chart canvas
+   var mychart = document.getElementById("chart5").getContext("2d");
+ 
+   steps = 10
+   max = 100
+   // draw bar chart
+   new Chart(mychart).Bar(barData, {
+        scaleOverride: true,
+        scaleSteps: steps,
+        scaleStepWidth: Math.ceil(max / steps),
+        scaleStartValue: 0,
+        scaleShowVerticalLines: true,
+        scaleShowGridLines : true,
+        barShowStroke : true,
+        scaleShowLabels: true
+   });
+
+ 
+</script>
+
+<h2 style="font-family:sans-serif;">Brisbane</h2><canvas id="chart6" width="600" height="400"></canvas>
+
+
+<script>
+   // bar chart data
+
+
+   var barData = {
+   labels : [{% for item in labels %}
+                  "{{item}}",
+              {% endfor %}],
+
+   datasets : [
+      {
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+
+         data : [{{sentiments['brisbane']['positive']}}, {{sentiments['brisbane']['negative']}}, {{sentiments['brisbane']['neutral']}}],
+      }
+      ]
+   }
+ 
+   // get bar chart canvas
+   var mychart = document.getElementById("chart6").getContext("2d");
+ 
+   steps = 10
+   max = 100
+   // draw bar chart
+   new Chart(mychart).Bar(barData, {
+        scaleOverride: true,
+        scaleSteps: steps,
+        scaleStepWidth: Math.ceil(max / steps),
+        scaleStartValue: 0,
+        scaleShowVerticalLines: true,
+        scaleShowGridLines : true,
+        barShowStroke : true,
+        scaleShowLabels: true
+   });
+
+ 
+</script>
+
+<h2 style="font-family:sans-serif;"2>Melbourne</h2><canvas id="chart7" width="600" height="400"></canvas>
+
+
+<script>
+   // bar chart data
+
+
+   var barData = {
+   labels : [{% for item in labels %}
+                  "{{item}}",
+              {% endfor %}],
+
+   datasets : [
+      {
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+
+         data : [{{sentiments['melbourne']['positive']}}, {{sentiments['melbourne']['negative']}}, {{sentiments['melbourne']['neutral']}}],
+      }
+      ]
+   }
+ 
+   // get bar chart canvas
+   var mychart = document.getElementById("chart7").getContext("2d");
+ 
+   steps = 10
+   max = 100
+   // draw bar chart
+   new Chart(mychart).Bar(barData, {
+        scaleOverride: true,
+        scaleSteps: steps,
+        scaleStepWidth: Math.ceil(max / steps),
+        scaleStartValue: 0,
+        scaleShowVerticalLines: true,
+        scaleShowGridLines : true,
+        barShowStroke : true,
+        scaleShowLabels: true
+   });
+
+ 
+</script>
+</body></html>
+
+{% endblock %}
+
+
+

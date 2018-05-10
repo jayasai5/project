@@ -59,6 +59,7 @@ neutron.create_security_group_rule({'security_group':'couchdb','security_group_r
 neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'egress','ethertype':'IPv4','protocol':'TCP','port_range_min':'9100','port_range_max':'9200','remote_ip_prefix':'0.0.0.0/0'}})
 neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'5984','port_range_max':'5984','remote_ip_prefix':'0.0.0.0/0'}})
 neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'5986','port_range_max':'5986','remote_ip_prefix':'0.0.0.0/0'}})
+neutron.create_security_group_rule({'security_group':'couchdb','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'80','port_range_max':'80','remote_ip_prefix':'0.0.0.0/0'}})
 group = neutron.create_security_group({'security_group':{'tenant_id':projectid,'name':'ssh','description':'security group from ssh '}})
 group_id = group["security_group"]["id"]
 neutron.create_security_group_rule({'security_group':'ssh','security_group_rule':{'security_group_id':group_id,'direction':'ingress','ethertype':'IPv4','protocol':'TCP','port_range_min':'22','port_range_max':'22','remote_ip_prefix':'0.0.0.0/0'}})

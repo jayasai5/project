@@ -4,7 +4,7 @@
   remote_user: ubuntu
   become: yes
   vars:
-   ansible_ssh_private_key_file: ./privatekey.pem
+   ansible_ssh_private_key_file: privatekey.pem
    HOST_COUNT: "{{ groups['maingroup'] | length }}"
   tasks:
     - name: restart machine
@@ -28,8 +28,6 @@
         upgrade: dist
     - name: install git 
       apt: name=git state=present
-    - name: install python 3
-      apt: name=python3 state=present
     - name: install pip
       apt: name={{ item }} state=present
       with_items:
@@ -74,10 +72,6 @@
       with_items:
         - build-essential
         - nodejs
-    - name: install npm in global mode
-      npm:
-        name:  npm
-        global: yes
     - name: install add-cors-to-couchdb module
       npm: 
         name: add-cors-to-couchdb
@@ -103,13 +97,54 @@
         - couchdb
         - numpy
         - vaderSentiment
+        - flask
     - name: make directoy for harvester files
       file: path=/root/harvester state=directory
     - name: copy harvester files to remote servers
       copy:
         src: "{{ item }}"
-        dest: /root/harvester/twiiter.creds
+        dest: /root/harvester/{{ item }}
         mode: 0644
       with_items:
-        - tweet_harvester.py
+        - harvester.py
         - twitter{{ (ansible_play_hosts.index(inventory_hostname)+1) }}.creds
+        - twitter_utils.py
+        - harvest_couchdb.py
+        - aurin.py
+        - aurin_view.js
+        - docs_view.js
+        - backup
+    - name: run the tweet harvester
+      shell: "python3 /root/harvester/harvester.py --credFile /root/harvester/twitter{{ (ansible_play_hosts.index(inventory_hostname)+1) }}.creds --couchdb_ip '{{ groups['servers'][0] }}'"
+      async: 100000000000000000
+      poll: 0
+    - name: run the couch harvester
+      shell: "python3 /root/harvester/harvest_couchdb.py"
+      async: 100000000000000000
+      poll: 0
+      when: inventory_hostname == groups['servers'][0]
+    - name: copy aurin data
+      copy:
+        src: "{{ item }}"
+        dest: /root/harvester
+        mode: 0644
+      with_items:
+        - cities
+        - website
+      when: inventory_hostname == groups['servers'][0]
+    - name: upload aurin data to couch
+      shell: "python3 /root/harvester/aurin.py"
+      when: inventory_hostname == groups['servers'][0]
+    - name: create aurin view
+      shell: "curl -X PUT -d @/root/harvester/aurin_view.js http://admin:admin@localhost:5984/aurin/_design/cities"
+      when: inventory_hostname == groups['servers'][0]
+    - name: create twitter view
+      shell: "curl -X PUT -d @/root/harvester/docs_view.js http://admin:admin@localhost:5984/twitter/_design/city"
+      when: inventory_hostname == groups['servers'][0]
+    - name: run web server
+      shell: "python3 /root/harvester/website/runserver.py"
+      async: 1000000000000000000
+      poll: 0
+      when: inventory_hostname == groups['servers'][0]
+    - debug:
+        msg: "check website at http://{{ groups['servers'][0] }}:80"
